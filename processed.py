@@ -41,6 +41,19 @@ def _combine_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates()  # добавь параметр subset
 
 
+def phone_block(x: str, block_size: int = 2) -> str:
+    """ Return first N(blocks) number from phone number"""
+    if len(str(x)) >= 10:
+        return str(x)[:block_size]
+    else:
+        return 0
+
+
+def full_name_block(x, block_size: int = 3) -> str:
+    """ Return first N(blocks) letters from last name"""
+    return str(x).split(" ")[0][:block_size]
+
+
 def preprocessing(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     for column in columns:
         if column in ['first_name', 'middle_name', 'last_name']:
@@ -59,6 +72,14 @@ def preprocessing(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     return df
 
 
+def from_click(path_name: str) -> pd.DataFrame:
+    """ load data from clickhouse """
+
+
+def to_click(df: pd.DataFrame, path_name: str) -> pd.DataFrame:
+    """ save to clickhouse """
+
+
 def processed() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     # TODO: import from clickhouse to pandas
@@ -66,17 +87,31 @@ def processed() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df2 = pd.read_csv('path/to/your/second_dataset.csv')
     df3 = pd.read_csv('path/to/your/third_dataset.csv')
 
+    # добавь коментарий перед каждой обработкой
     columns_to_process_1 = ['full_name', 'email', 'sex', 'birthdate', 'phone']
     df1_processed = preprocessing(df1, columns_to_process_1)
     df1_processed = replace_empty_strings(df1_processed)
     df1_processed = remove_similar_columns(df1_processed)
     df1_processed = _combine_duplicates(df1_processed)
 
+    df1_processed = df1_processed["phone"].astype(str)
+    # make 'block' for phone number
+    df1_processed["phone_block"] = df1_processed["phone"].apply(phone_block)
+    # make 'block' for last name
+    df1_processed["full_name_block"] = df1_processed["full_name"].apply(full_name_block)
+
     columns_to_process_2 = ['first_name', 'middle_name', 'last_name', 'birthdate', 'phone']
     df2_processed = preprocessing(df2, columns_to_process_2)
     df2_processed = replace_empty_strings(df2_processed)
     df2_processed = remove_similar_columns(df2_processed)
     df2_processed = _combine_duplicates(df2_processed)
+
+    df2_processed = df2_processed["phone"].astype(str)
+
+    # make 'block' for phone number
+    df2_processed["phone_block"] = df2_processed["phone"].apply(phone_block)
+    # make 'block' for last name
+    df2_processed["full_name_block"] = df2_processed["full_name"].apply(full_name_block)
 
     columns_to_process_3 = ['name', 'email', 'birthdate', 'sex']
     df3_processed = preprocessing(df3, columns_to_process_3)
@@ -85,5 +120,8 @@ def processed() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df3_processed = replace_empty_strings(df3_processed)
     df3_processed = remove_similar_columns(df3_processed)
     df3_processed = _combine_duplicates(df3_processed)
+
+    # make 'block' for last name
+    df3_processed["full_name_block"] = df3_processed["full_name"].apply(full_name_block)
 
     return df1_processed, df2_processed, df3_processed
